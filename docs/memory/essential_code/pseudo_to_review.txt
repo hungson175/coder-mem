@@ -1,0 +1,152 @@
+PSEUDO-CODE: chat() function with memory triggers
+==================================================
+
+def chat(user_input: str) -> str:
+    # Add user message to conversation
+    messages.append(HumanMessage(user_input))
+
+    # Get initial LLM response
+    response = llm_with_tools.invoke(messages)
+
+    # Add response to messages
+    messages.append(response)
+
+    # Track TodoWrite step count for memory trigger
+    todo_step_count = 0
+
+    # MAIN TOOL EXECUTION LOOP
+    while response.tool_calls:
+
+        for tool_call in response.tool_calls:
+            tool_name = tool_call["name"]
+            tool_args = tool_call["args"]
+
+            # Execute the tool
+            tool_result = tools_map[tool_name].invoke(tool_args)
+
+            # Add tool result to messages
+            messages.append(ToolMessage(tool_result, tool_call_id))
+
+            # MEMORY TRIGGER: Track TodoWrite step count
+            if tool_name.lower() == "todowrite" and "todos" in tool_args:
+                todo_step_count = len(tool_args["todos"])
+
+        # Get next LLM response
+        response = llm_with_tools.invoke(messages)
+        messages.append(response)
+
+    # MEMORY TRIGGER: After loop completes, check if memory store should be invoked
+    if todo_step_count > 5:
+        # Inject message to trigger memory-store agent
+        messages.append(
+            HumanMessage("Consider storing learnings from this task using memory-store agent if valuable patterns were discovered.")
+        )
+
+        # Get final response (LLM decides whether to invoke memory-store)
+        response = llm_with_tools.invoke(messages)
+        messages.append(response)
+
+    # Return final response content
+    return response.content
+
+
+QUESTIONS TO RESOLVE:
+=====================
+
+1. WHERE to inject memory-recall trigger?
+   - Before user message? (won't work - user hasn't described task yet)
+   - After initial response? (if LLM says "let me plan this complex task...")
+   - HOW to detect "this is complex"?
+     * Check if LLM response mentions "plan", "complex", "multi-step"?
+     * Wait for TodoWrite with >5 steps, then recall BEFORE continuing?
+
+2. TIMING of memory-store trigger:
+   - Current: After main loop completes
+   - Problem: What if loop interrupted? Memory never stored
+   - Alternative: Trigger immediately after TodoWrite >5 detected?
+
+3. MESSAGE INJECTION approach:
+   - Current: Append HumanMessage suggesting to use agent
+   - Problem: Will LLM actually invoke Task tool with memory-store agent?
+   - Alternative: Programmatically invoke Task tool directly?
+
+4. CONTEXT POLLUTION:
+   - Injected messages pollute main conversation
+   - Should we remove them after memory operation completes?
+   - Or is pollution acceptable since it's educational?
+
+
+ALTERNATIVE APPROACH A: Direct Task invocation
+===============================================
+
+if todo_step_count > 5:
+    # Don't inject message - directly invoke Task tool
+    task_tool = tools_map["Task"]
+
+    # Build prompt for memory-store agent
+    store_prompt = f"""
+    Analyze the conversation and store any valuable universal coding patterns.
+    TodoWrite had {todo_step_count} steps, indicating non-trivial work.
+    """
+
+    # Invoke Task tool programmatically
+    task_result = task_tool.invoke({
+        "subagent_type": "memory-store",
+        "prompt": store_prompt,
+        "description": "Store memory patterns"
+    })
+
+    # Add result as ToolMessage (or skip - memory stored silently?)
+
+
+ALTERNATIVE APPROACH B: Add dedicated memory tools
+===================================================
+
+# Add new tools: memory_recall, memory_store
+# These wrap Task tool invocation but appear as first-class tools to LLM
+
+def memory_store_tool(context: str) -> str:
+    """Store universal coding patterns from current conversation."""
+    task_tool = get_tool("Task")
+    return task_tool.invoke({
+        "subagent_type": "memory-store",
+        "prompt": f"Store patterns from: {context}"
+    })
+
+# Then in chat():
+if todo_step_count > 5:
+    messages.append(HumanMessage("Use memory_store_tool to save learnings"))
+    # LLM will see memory_store_tool and invoke it
+
+
+ALTERNATIVE APPROACH C: Keep manual (no auto-trigger)
+======================================================
+
+# Don't modify chat() at all
+# User explicitly invokes memory agents via:
+#   - "store this learning"
+#   - "recall past experiences with X"
+# Or via slash commands:
+#   - /remember-store
+#   - /remember-recall
+
+
+MY RECOMMENDATION:
+==================
+
+Start with APPROACH C (manual invocation) because:
+
+1. Simpler - no chat() modifications needed
+2. User has control - decides what's worth remembering
+3. Can add slash commands: /remember-store, /remember-recall
+4. Once manual flow works, can add auto-triggers later
+
+Then evolve to APPROACH B (dedicated tools):
+- Less intrusive than message injection
+- LLM understands these are first-class operations
+- Can be invoked automatically OR manually
+
+Avoid APPROACH A (direct invocation):
+- Bypasses LLM decision-making
+- Forces memory operations even if not valuable
+- Hard to debug (silent operations)
