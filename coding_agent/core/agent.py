@@ -27,8 +27,8 @@ class CodingAgent(BaseAgent):
                 "sonnet": "claude-sonnet-4-20250514",
                 "deepseek": "deepseek-chat",
                 "ds": "deepseek-chat",
-                "grok": "grok-code-fast-1",
-                "xai": "grok-code-fast-1",
+                "grok": "grok-4-fast-reasoning",
+                "xai": "grok-4-fast-reasoning",
             }
             # Use provider default if provider specified, else use Config default
             if provider_name and provider_name.lower() in provider_defaults:

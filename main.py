@@ -40,8 +40,8 @@ def switch_agent_provider(
                 "sonnet": "claude-sonnet-4-20250514",
                 "deepseek": "deepseek-chat",
                 "ds": "deepseek-chat",
-                "grok": "grok-code-fast-1",
-                "xai": "grok-code-fast-1",
+                "grok": "grok-4-fast-reasoning",
+                "xai": "grok-4-fast-reasoning",
             }
             model_name = provider_defaults.get(provider_name.lower(), "claude-sonnet-4-20250514")
 

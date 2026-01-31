@@ -168,7 +168,7 @@ The agent supports multiple LLM providers that can be switched dynamically:
   - Features: Auto-cache management, cost-effective
 - **Grok/xAI** (aliases: `grok`, `xai`) **[DEFAULT]**
   - Requires `XAI_API_KEY`
-  - Model: `grok-code-fast-1`
+  - Model: `grok-4-fast-reasoning`
   - Features: Auto-cache management, fast inference
 
 #### Using the `/model` Command
@@ -194,7 +194,7 @@ tools:
   - Read
   - Write
   - Bash
-model: grok-code-fast-1  # Optional, defaults to Config.MODEL_NAME
+model: grok-4-fast-reasoning  # Optional, defaults to Config.MODEL_NAME
 ---
 
 # System Prompt

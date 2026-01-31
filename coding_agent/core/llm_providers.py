@@ -150,7 +150,7 @@ class DeepSeekProvider(LLMProvider):
 class GrokProvider(LLMProvider):
     """Grok/xAI provider with auto-cache management."""
 
-    def __init__(self, model_name: str = "grok-code-fast-1", **kwargs):
+    def __init__(self, model_name: str = "grok-4-fast-reasoning", **kwargs):
         # Validate API key
         if not os.getenv("XAI_API_KEY"):
             raise ValueError("XAI_API_KEY environment variable is required")
