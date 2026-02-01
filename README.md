@@ -2,7 +2,7 @@
 
 > AI coding assistant with memory - write, edit, and manage code through natural language
 <img width="1292" height="896" alt="image" src="https://github.com/user-attachments/assets/ef55566d-894f-41e6-9287-d34187aa79e3" />
-
+[How did I do it ?](https://github.com/hungson175/hungson175/blob/main/blogs/reverse-claude-code-blog.md)
 ## Quick Start
 
 **Prerequisites:**
